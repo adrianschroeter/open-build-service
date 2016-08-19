@@ -78,7 +78,7 @@ class Webui::PackageControllerTest < Webui::IntegrationTest
     page.must_have_text "Couldn't find project 'home:foo'. Are you sure it still exists?"
   end
 
-  def test_show_package_binary_as_user
+  def test_show_package_binary_as_user # src/api/spec/controllers/webui/package_controller_spec.rb
     login_user('fred', 'buildservice', to:
         package_binaries_path(package: 'TestPack', project: 'home:Iggy', repository: '10.2'))
 
@@ -98,7 +98,6 @@ class Webui::PackageControllerTest < Webui::IntegrationTest
     page.status_code.must_equal 404
   end
 
-  # spec/features/webui/packages_spec.rb
   uses_transaction :test_delete_package_as_user
   def test_delete_package_as_user # spec/controllers/webui/package_controller_spec.rb
     use_js
@@ -107,8 +106,10 @@ class Webui::PackageControllerTest < Webui::IntegrationTest
     delete_and_recreate_kdelibs
   end
 
+  # spec/controllers/webui/package_controller_spec.rb
+  # spec/features/webui/packages_spec.rb
   uses_transaction :test_delete_package_as_admin
-  def test_delete_package_as_admin # spec/controllers/webui/package_controller_spec.rb
+  def test_delete_package_as_admin
     use_js
 
     login_king
@@ -266,6 +267,8 @@ class Webui::PackageControllerTest < Webui::IntegrationTest
     assert_match %r{this is my dummy}, page.source
   end
 
+  # spec/controllers/webui/request_controller_spec.rb
+  # spec/features/webui/packages_spec.rb
   def test_delete_request
     use_js
 

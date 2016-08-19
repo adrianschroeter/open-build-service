@@ -547,6 +547,8 @@ class BsRequestAction < ActiveRecord::Base
       else
         tpkg = tpkg.gsub(/#{Regexp.escape(suffix)}$/, '') # strip distro specific extension
       end
+
+#      tpkg = pkg.origin_name
       tpkg = self.target_package if self.target_package # already given
 
       # maintenance incident actions need a releasetarget
@@ -628,6 +630,7 @@ class BsRequestAction < ActiveRecord::Base
           end
           raise InvalidReleaseTarget.new "Can not release to a maintenance incident project" unless release_target
           tprj = release_target
+puts "XXX re-route #{tprj} #{tpkg}"
         end
       end
 
@@ -657,6 +660,7 @@ class BsRequestAction < ActiveRecord::Base
         newAction.target_project = tprj.name
         newAction.target_package = tpkg + incident_suffix
       end
+puts "XXXX newAction #{newAction.target_package}"
       newAction.source_rev = rev if rev
       if self.is_maintenance_release?
         if pkg.is_channel?
@@ -722,7 +726,7 @@ class BsRequestAction < ActiveRecord::Base
         newAction.source_package = pkg.name
         unless self.is_maintenance_incident?
           newAction.target_project = p
-          newAction.target_package = pkg.name + incident_suffix
+          newAction.target_package = pkg.origin_name + incident_suffix
         end
         newactions << newAction
       end

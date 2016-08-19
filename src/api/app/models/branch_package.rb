@@ -346,7 +346,10 @@ class BranchPackage
         elsif not @copy_from_devel and devel_package
           p[:package] = devel_package
           p[:link_target_project] = p[:package].project unless params[:newinstance]
-          p[:target_package] = p[:package].name
+          p[:target_package] = p[:package].origin_name
+#         if p[:package].project.is_maintenance_incident?
+#           p[:target_package] = p[:package].origin_container(local: false).name
+#         end
           p[:target_package] += ".#{p[:link_target_project].name}" if @extend_names
           # user specified target name
           p[:target_package] = params[:target_package] if params[:target_package]
@@ -530,8 +533,12 @@ class BranchPackage
           prj = pkg.project if pkg
         end
       end
-      tpkg_name = params[:target_package]
-      tpkg_name = params[:package] unless tpkg_name
+      # default
+      tpkg_name = params[:package]
+      # branching from an incident uses the native name from release
+      tpkg_name = pkg.origin_name if pkg
+      # manual override wins always
+      tpkg_name = params[:target_package] if params[:target_package]
       tpkg_name += ".#{prj.name}" if @extend_names
       if pkg
         # local package

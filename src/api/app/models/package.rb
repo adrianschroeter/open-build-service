@@ -874,9 +874,43 @@ class Package < ActiveRecord::Base
       return pkg
     end
 
-    # If package is nil it's either broken or a remote one.
+    # If package is nil it's either broken, a remote one or a missingok.
     # Otherwise we continue
     return pkg.try(:origin_container, options)
+  end
+
+  # follow links as long as needed to find out the original package name.
+  # important for extended package names in maintenance
+  # also pass the incident projects and search for the release projects
+  def internal_origin_name
+    linkinfo = self.dir_hash['linkinfo']
+    # no link, so I am origin
+    return self.name if linkinfo.nil?
+
+    # local link, go one step deeper
+    prj = Project.get_by_name(linkinfo['project'])
+    pkg = prj.find_package(linkinfo['package'])
+    if (self.project != prj) && (not prj.is_maintenance_incident?)
+      suffix = self.name.gsub(/^#{linkinfo['package']}/,'')
+      return linkinfo['package'], suffix
+    end
+
+    # If package is nil it's either broken, a remote one or a missingok.
+    # Otherwise we continue
+    npkg = pkg.try(:origin_name)
+    if npkg.kind_of? Array
+      return self.name.gsub(/#{npkg[1]}$/,'')
+    end
+    if npkg.kind_of? String
+      return npkg
+    end
+    pkg.name
+  end
+
+  def origin_name
+    ion = internal_origin_name
+    return ion.first if ion.kind_of? Array
+    ion
   end
 
   def is_local_link?

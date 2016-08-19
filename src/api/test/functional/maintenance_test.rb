@@ -1580,8 +1580,12 @@ class MaintenanceTests < ActionDispatch::IntegrationTest
 
     # verify that local linked packages still get branched correctly
     post '/source/BaseDistro2.0/pack2', :cmd => 'branch'
+print @response.body
     assert_response :success
+get '/source/BaseDistro2.0:LinkedUpdateProject/pack2.0/_link'
+print @response.body
     get '/source/home:king:branches:BaseDistro2.0:LinkedUpdateProject'
+print @response.body
     assert_response :success
     get '/source/home:king:branches:BaseDistro2.0:LinkedUpdateProject/pack2/_link'
     assert_response :success

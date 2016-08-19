@@ -82,11 +82,11 @@ class MaintenanceTests < ActionDispatch::IntegrationTest
     assert_response :success
 
     # add empty kgraft container
-    put "/source/BaseDistro2.0:LinkedUpdateProject/kgraft-incident-#{kernelIncidentID}/_meta",
+#    put "/source/BaseDistro2.0:LinkedUpdateProject/kgraft-incident-#{kernelIncidentID}/_meta",
         "<package name='kgraft-incident-#{kernelIncidentID}' project='BaseDistro2.0:LinkedUpdateProject'><title/><description/></package>"
-    assert_response :success
+#    assert_response :success
     post "/source/BaseDistro2.0:LinkedUpdateProject/kgraft-incident-#{kernelIncidentID}",
-         :cmd => 'branch', :target_project => kernelIncidentProject
+         cmd: 'branch', target_project: kernelIncidentProject, maintenance: 1, missingok: 1
     assert_response :success
 
     # create a GA update patch
@@ -133,7 +133,7 @@ class MaintenanceTests < ActionDispatch::IntegrationTest
     ### Here starts the kgraft team
     # create a update patch based on former kernel incident
     Timecop.freeze(1)
-    post '/source/'+kernelIncidentProject+'/kgraft-incident-'+kernelIncidentID,
+    post '/source/'+kernelIncidentProject+'/kgraft-incident-'+kernelIncidentID+'.BaseDistro2.0_LinkedUpdateProject',
          :cmd => 'branch', :target_project => "home:king:branches:BaseDistro2.0",
          :maintenance => 1
     assert_response :success
@@ -155,6 +155,7 @@ class MaintenanceTests < ActionDispatch::IntegrationTest
           <binaries arch='x86_64' project='BaseDistro2.0:LinkedUpdateProject' repository='BaseDistro2LinkedUpdateProject_repo'>
             <!-- empty kgraft container -->
             <binary name='package_newweaktags' package='kgraft-incident-0' />
+            <binary name='package_newweaktags' package='kgraft-incident-0.BaseDistro2.0_LinkedUpdateProject' />
           </binaries>
         </channel>"
     # rubocop:enable Metrics/LineLength
@@ -298,6 +299,7 @@ class MaintenanceTests < ActionDispatch::IntegrationTest
     run_scheduler('x86_64')
     run_scheduler('i586')
     run_publisher
+
     get "/build/#{incidentProject}/_result"
     assert_response :success
     assert_xml_tag :parent => { tag: 'result', attributes: { repository: 'BaseDistro2Channel', arch: 'i586', state: 'published' } },
@@ -355,7 +357,7 @@ class MaintenanceTests < ActionDispatch::IntegrationTest
     assert_not node.has_attribute?(:rev)
     get "/source/#{incidentProject}/kgraft-incident-0.My_Maintenance_0/_link"
     assert_response :success
-    assert_xml_tag tag: "link", attributes: { project: "My:Maintenance:0", package: "kgraft-incident-0" }
+    assert_xml_tag tag: "link", attributes: { project: "My:Maintenance:0", package: "kgraft-incident-0.BaseDistro2.0_LinkedUpdateProject" }
     node = ActiveXML::Node.new(@response.body)
     assert_not node.has_attribute?(:rev)
 

@@ -52,9 +52,8 @@ class BsRequestPermissionCheck
       begin
         ActiveXML.backend.direct_http(url)
       rescue ActiveXML::Transport::Error
-        # rubocop:disable Metrics/LineLength
-        raise ExpandError.new "The source of package #{action.source_project}/#{action.source_package}#{action.source_rev ? " for revision #{action.source_rev}" : ''} is broken"
-        # rubocop:enable Metrics/LineLength
+        raise ExpandError.new "The source of package #{action.source_project}/#{action.source_package}" +
+                              "#{action.source_rev ? " for revision #{action.source_rev}" : ''} is broken"
       end
     end
 
@@ -79,6 +78,7 @@ class BsRequestPermissionCheck
 
     if action.makeoriginolder && Package.exists_by_project_and_name(action.target_project, action.target_package)
       # the target project may link to another project where we need to check modification permissions
+      # this operation is okay on locked packages.
       originpkg = Package.get_by_project_and_name action.target_project, action.target_package
       unless User.current.can_modify_package?(originpkg, true)
         raise PostRequestNoPermission.new "Package target can not get initialized using makeoriginolder." +
@@ -139,7 +139,7 @@ class BsRequestPermissionCheck
   end
 
   def check_action_target(action)
-    return unless [:submit, :change_devel, :maintenance_release, :maintenance_incident].include? action.action_type
+    return if [:delete, :add_role, :set_bugowner, :group].include? action.action_type
 
     if action.action_type == :change_devel && !action.target_package
       raise PostRequestNoPermission.new "Target package is missing in request #{action.bs_request.number} (type #{action.action_type})"

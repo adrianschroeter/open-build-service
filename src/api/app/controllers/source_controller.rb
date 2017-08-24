@@ -1450,13 +1450,17 @@ class SourceController < ApplicationController
 
   # POST /source/<project>/<package>?cmd=release
   def package_command_release
-    pkg = Package.get_by_project_and_name params[:project], params[:package], use_source: true, follow_project_links: false
+    pkg = Package.get_by_project_and_name params[:project], params[:package], use_source: true, follow_project_links: false, follow_multibuild: true
+    multibuild_container = nil
+    if params[:package].include?(":") && !params[:package].starts_with?('_product:')
+      multibuild_container = params[:package].gsub(/^.*:/, '')
+    end
 
     # specified target
     if params[:target_project]
       # we do not create it ourself
       Project.get_by_name(params[:target_project])
-      _package_command_release_manual_target(pkg)
+      _package_command_release_manual_target(pkg, multibuild_container)
     else
       spkg = Package.get_by_project_and_name(params[:project], params[:package])
       verify_repos_match!(spkg.project)
@@ -1466,7 +1470,7 @@ class SourceController < ApplicationController
         next if params[:repository] && params[:repository] != repo.name
         repo.release_targets.each do |releasetarget|
           # find md5sum and release source and binaries
-          release_package(pkg, releasetarget.target_repository, pkg.name, repo, nil, params[:setrelease], true)
+          release_package(pkg, releasetarget.target_repository, pkg.name, repo, multibuild_container, nil, params[:setrelease], true)
         end
       end
     end
@@ -1474,7 +1478,7 @@ class SourceController < ApplicationController
     render_ok
   end
 
-  def _package_command_release_manual_target(pkg)
+  def _package_command_release_manual_target(pkg, multibuild_container)
     verify_can_modify_target!
 
     if params[:target_repository].blank? || params[:repository].blank?
@@ -1487,7 +1491,7 @@ class SourceController < ApplicationController
     raise UnknownRepository, "Repository does not exist #{params[:repository]}" unless repo.count > 0
     repo = repo.first
 
-    release_package(pkg, targetrepo, pkg.name, repo, nil, params[:setrelease], true)
+    release_package(pkg, targetrepo, pkg.name, repo, multibuild_container, nil, params[:setrelease], true)
   end
   private :_package_command_release_manual_target
 

@@ -790,6 +790,17 @@ class ChannelMaintenanceTests < ActionDispatch::IntegrationTest
     assert_xml_tag tag: 'binary', attributes:            { name: 'package', project: "BaseDistro3Channel", repository: "channel_repo", arch: "src" }
     assert_xml_tag tag: 'updateinfo', attributes:            { id: "UpdateInfoTagNew-patch_name-#{Time.now.utc.year}-1", version: "1" }
 
+    # set to manual release and try again
+    prj = Project.find_by_name('My:Maintenance:0')
+    prj.repositories.each do |repo|
+      repo.release_targets.each do |rt|
+         rt.trigger = "manual"
+         rt.save
+      end
+    end
+    post "/source/My:Maintenance:0/pack2.BaseDistro3?cmd=release"
+    assert_response :success
+
     #
     # A second update on top of a released one.
     # Additional channel using just a local linked package

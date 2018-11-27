@@ -118,28 +118,44 @@ class Authenticator
     krb
   end
 
-  def raise_and_invalidate(authorization, message = '')
-    @response.headers['WWW-Authenticate'] = authorization.join(' ')
+  def raise_and_invalidate(message = '')
+    @response.headers['WWW-Authenticate'] = @authorization.join(' ')
     raise AuthenticationRequiredError, message
   end
 
-  def extract_krb_user(authorization)
-    unless authorization[1]
+  def extract_user_from_token
+    unless @authorization[1]
+      Rails.logger.debug "Didn't receive any Bearer token."
+      raise_and_invalidate(@authorization, 'OAuth negotiation failed.')
+    end
+
+    token = Token::Bearer.find_by_string(@authorization[1])
+
+    unless token
+      raise AuthenticationRequiredError, "No user found for token"
+    end
+
+    @http_user = token.user
+    @login = @http_user.login
+  end
+
+  def extract_krb_user
+    unless @authorization[1]
       Rails.logger.debug "Didn't receive any negotiation data."
-      raise_and_invalidate(authorization, 'GSSAPI negotiation failed.')
+      raise_and_invalidate(@authorization, 'GSSAPI negotiation failed.')
     end
 
     begin
       krb = initialize_krb_session
 
       begin
-        tok = krb.accept_context(Base64.strict_decode64(authorization[1]))
+        tok = krb.accept_context(Base64.strict_decode64(@authorization[1]))
       rescue GSSAPI::GssApiError, ArgumentError
-        raise_and_invalidate(authorization, 'Received invalid GSSAPI context.')
+        raise_and_invalidate(@authorization, 'Received invalid GSSAPI context.')
       end
 
       unless krb.display_name.match?("@#{CONFIG['kerberos_realm']}$")
-        raise_and_invalidate(authorization, 'User authenticated in wrong Kerberos realm.')
+        raise_and_invalidate(@authorization, 'User authenticated in wrong Kerberos realm.')
       end
 
       unless tok == true
@@ -158,8 +174,8 @@ class Authenticator
     end
   end
 
-  def extract_basic_user(authorization)
-    @login, @passwd = Base64.decode64(authorization[1]).split(':', 2)[0..1]
+  def extract_basic_user
+    @login, @passwd = Base64.decode64(@authorization[1]).split(':', 2)[0..1]
 
     # set password to the empty string in case no password is transmitted in the auth string
     @passwd ||= ''
@@ -194,20 +210,27 @@ class Authenticator
   end
 
   def extract_auth_user
-    authorization = authorization_infos
-    # privacy! logger.debug( "AUTH: #{authorization.inspect}" )
-    if authorization
+    @authorization ||= authorization_infos
+    # privacy! logger.debug( "AUTH: #{@authorization.inspect}" )
+    if @authorization
       # logger.debug( "AUTH2: #{authorization}" )
-      if authorization[0] == 'Basic'
-        extract_basic_user(authorization)
-      elsif authorization[0] == 'Negotiate' && CONFIG['kerberos_mode']
-        extract_krb_user(authorization)
+      if @authorization[0] == 'Basic'
+        extract_basic_user(@authorization)
+      elsif is_bearer?
+        extract_user_from_token(@authorization)
+      elsif @authorization[0] == 'Negotiate' && CONFIG['kerberos_mode']
+        extract_krb_user(@authorization)
       else
-        Rails.logger.debug "Unsupported authentication string '#{authorization[0]}' received."
+        Rails.logger.debug "Unsupported authentication string '#{@authorization[0]}' received."
       end
     else
       Rails.logger.debug 'No authentication string was received.'
     end
+  end
+
+  def is_bearer?
+    @authorization ||= authorization_infos
+    @authorization[0] == 'Bearer'
   end
 
   def check_extracted_user

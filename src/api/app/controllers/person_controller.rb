@@ -11,6 +11,7 @@ class PersonController < ApplicationController
   skip_before_action :require_login, only: [:command, :register]
 
   before_action :set_user, only: [:post_userinfo, :change_my_password]
+  before_action :block_oauth
 
   def show
     if params[:prefix]
@@ -270,5 +271,14 @@ class PersonController < ApplicationController
 
   def set_user
     @user = User.find_by(login: params[:login])
+  end
+
+  # We don't allow account specific actions via a token
+  def block_oauth
+    if @authenticator.is_bearer?
+      render_error status: 403, errorcode: 'blocked_via_token',
+                   message: 'User data can not be accessed via a bearer token'
+      return
+    end
   end
 end

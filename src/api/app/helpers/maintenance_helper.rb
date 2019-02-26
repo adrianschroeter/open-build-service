@@ -40,7 +40,7 @@ module MaintenanceHelper
     end
   end
 
-  def release_package(source_package, target, target_package_name,
+  def release_package(source_package, source_project, target, target_package_name,
                       filter_source_repository = nil, multibuild_container = nil, action = nil,
                       setrelease = nil, manual = nil)
     if target.is_a?(Repository)
@@ -62,9 +62,9 @@ module MaintenanceHelper
 
     # copy binaries
     if target.is_a?(Repository)
-      u_ids = copy_binaries_to_repository(filter_source_repository, source_package, target, target_package_name, multibuild_container, setrelease)
+      u_ids = copy_binaries_to_repository(filter_source_repository, source_package, source_project, target, target_package_name, multibuild_container, setrelease)
     else
-      u_ids = copy_binaries(filter_source_repository, source_package, target_package_name, target_project, multibuild_container, setrelease)
+      u_ids = copy_binaries(filter_source_repository, source_package, source_project, target_package_name, target_project, multibuild_container, setrelease)
     end
 
     # create or update main package linking to incident package
@@ -73,11 +73,11 @@ module MaintenanceHelper
     end
 
     # publish incident if source is read protect, but release target is not. assuming it got public now.
-    f = source_package.project.flags.find_by_flag_and_status('access', 'disable')
+    f = source_project.flags.find_by_flag_and_status('access', 'disable')
     if f
       unless target_project.flags.find_by_flag_and_status('access', 'disable')
-        source_package.project.flags.delete(f)
-        source_package.project.store(comment: 'project becomes public on release action')
+        source_project.flags.delete(f)
+        source_project.store(comment: 'project becomes public on release action')
         # patchinfos stay unpublished, it is anyway too late to test them now ...
       end
     end
@@ -175,15 +175,15 @@ module MaintenanceHelper
     action.set_acceptinfo(result['acceptinfo']) if action
   end
 
-  def copy_binaries(filter_source_repository, source_package, target_package_name, target_project,
+  def copy_binaries(filter_source_repository, source_package, source_project, target_package_name, target_project,
                     multibuild_container, setrelease)
     update_ids = []
-    source_package.project.repositories.each do |source_repo|
+    source_project.repositories.each do |source_repo|
       next if filter_source_repository && filter_source_repository != source_repo
       source_repo.release_targets.each do |releasetarget|
         # FIXME: filter given release and/or target repos here
         if releasetarget.target_repository.project == target_project
-          u_id = copy_binaries_to_repository(source_repo, source_package, releasetarget.target_repository,
+          u_id = copy_binaries_to_repository(source_repo, source_package, source_project, releasetarget.target_repository,
                                              target_package_name, multibuild_container, setrelease)
           update_ids << u_id if u_id
         end
@@ -197,7 +197,7 @@ module MaintenanceHelper
     update_ids
   end
 
-  def copy_binaries_to_repository(source_repository, source_package, target_repo, target_package_name,
+  def copy_binaries_to_repository(source_repository, source_package, source_project, target_repo, target_package_name,
                                   multibuild_container, setrelease)
     u_id = get_updateinfo_id(source_package, target_repo)
     source_package_name = source_package.name
@@ -207,7 +207,7 @@ module MaintenanceHelper
     end
     source_repository.architectures.each do |arch|
       # get updateinfo id in case the source package comes from a maintenance project
-      copy_single_binary(arch, target_repo, source_package.project.name, source_package_name,
+      copy_single_binary(arch, target_repo, source_project.name, source_package_name,
                          source_repository, target_package_name, u_id, setrelease)
     end
     u_id

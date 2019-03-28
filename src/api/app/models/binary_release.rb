@@ -84,7 +84,7 @@ class BinaryRelease < ApplicationRecord
           hash[:binary_updateinfo] = binary['updateinfoid']
           hash[:binary_updateinfo_version] = binary['updateinfoversion']
         end
-        rp = Package.find_by_project_and_name(binary['project'], binary['package'])
+        rp = Package.find_by_project_and_name(binary['project'], Package.striping_multibuild_suffix(binary['package']))
         hash[:release_package_id] = rp.id if binary['project'] && rp
         if binary['patchinforef']
           begin

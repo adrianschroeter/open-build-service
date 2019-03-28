@@ -192,6 +192,7 @@ CREATE TABLE `binary_releases` (
   `binary_updateinfo_version` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `modify_time` datetime DEFAULT NULL,
   `on_medium_id` int(11) DEFAULT NULL,
+  `flavor` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `ra_name_index` (`repository_id`,`binary_name`),
   KEY `exact_search_index` (`binary_name`,`binary_epoch`,`binary_version`,`binary_release`,`binary_arch`),

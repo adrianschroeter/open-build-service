@@ -24,14 +24,17 @@
 
 .build-state-building {
   color: $blue;
+  @extend .bg-secondary;
 }
 
 .build-state-scheduled {
   color: $cyan;
+  @extend .bg-secondary;
 }
 
 .build-state-signing, .build-state-finished {
   color: $dark;
+  @extend .bg-secondary;
 }
 
 .build-state-unresolvable, .build-state-broken, .build-state-failed {
@@ -49,6 +52,7 @@
 
 .build-state-scheduled-warning, .build-state-unknown {
   color: $yellow;
+  @extend .bg-secondary;
 }
 
 .repository-state-default {

@@ -1199,14 +1199,16 @@ class BsRequest < ApplicationRecord
     review_comment
   end
 
-  # TODO: Once the feature flag notifications_redesign is removed, remove this method if we decide to delete the "Tasks" page.
+  # drop all user caches, mainly for involed requests operations
   def update_cache
     target_package_ids = bs_request_actions.with_target_package.pluck(:target_package_id)
     target_project_ids = bs_request_actions.with_target_project.pluck(:target_project_id)
 
-    user_ids = Relationship.where(package_id: target_package_ids).or(
+    groups = Relationship.where(package_id: target_package_ids).or(
       Relationship.where(project_id: target_project_ids)
-    ).groups.joins(:groups_users).pluck('groups_users.user_id')
+    ).groups
+
+    user_ids = groups.joins(:groups_users).pluck('groups_users.user_id')
 
     user_ids += Relationship.where(package_id: target_package_ids).or(
       Relationship.where(project_id: target_project_ids)
@@ -1217,10 +1219,12 @@ class BsRequest < ApplicationRecord
     # rubocop:disable Rails/SkipsModelValidations
     # Skipping Model validations in this case is fine as we only want to touch
     # the associated user models to invalidate the cache keys
-    Group.joins(:relationships).where(relationships: { package_id: target_package_ids }).or(
-      Group.joins(:relationships).where(relationships: { project_id: target_project_ids })
-    ).update_all(updated_at: Time.now)
-    User.where(id: user_ids).update_all(updated_at: Time.now)
+    User.where(id: user_ids).each do |user|
+      user.remove_cache
+    end
+    groups.each do |group|
+      group.remove_cache
+    end
     # rubocop:enable Rails/SkipsModelValidations
   end
 end

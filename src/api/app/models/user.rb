@@ -763,8 +763,13 @@ class User < ApplicationRecord
     to_s
   end
 
+  def remove_cache
+    Rails.cache.fetch(["requests_for", self])
+    clear_watched_projects_cache
+  end
+
   def tasks
-    Rails.cache.fetch("requests_for_#{cache_key_with_version}") do
+    Rails.cache.fetch(["requests_for", self]) do
       declined_requests.count +
         incoming_requests.count +
         involved_reviews.count

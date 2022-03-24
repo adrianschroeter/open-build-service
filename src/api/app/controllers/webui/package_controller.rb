@@ -699,22 +699,15 @@ class Webui::PackageController < Webui::WebuiController
 
     @package_name = params[:package]
     begin
-      @package = Package.get_by_project_and_name(@project, @package_name, use_source: false,
+      @package = Package.get_by_project_and_name(@project, @package_name, use_source: true,
                                                                           follow_multibuild: true,
                                                                           follow_project_links: true)
-    rescue Package::UnknownObjectError
+    rescue Package::UnknownObjectError,
+           Package::ReadAccessError,
+           Project::ReadAccessError
       redirect_to project_show_path(@project.to_param),
                   error: "Couldn't find package '#{params[:package]}' in " \
                          "project '#{@project.to_param}'. Are you sure it exists?"
-      return false
-    end
-
-    # NOTE: @package is a String for multibuild packages
-    @package = Package.find_by_project_and_name(@project.name, Package.striping_multibuild_suffix(@package_name)) if @package.is_a?(String)
-
-    unless @package.check_source_access?
-      redirect_to package_show_path(project: @project.name, package: @package_name),
-                  error: 'Could not access build log'
       return false
     end
 

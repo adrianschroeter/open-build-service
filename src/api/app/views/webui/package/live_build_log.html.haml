@@ -2,7 +2,7 @@
 - @metarobots = 'noindex,nofollow'
 
 .card.mb-3
-  = render partial: 'tabs', locals: { project: @project, package: @package }
+  = render partial: 'tabs', locals: { project: @project, package: @package_name }
   .card-body
     %h3= @pagetitle
     %p

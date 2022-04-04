@@ -36,6 +36,13 @@ default: &default
   # proxy_auth_mode can be :off or :on
   proxy_auth_mode: :off
 
+  # proxy_auth_host: https://build.opensuse.org
+  # proxy_auth_register_page: https://idp-portal.suse.com/univention/self-service/#page=createaccount
+  # proxy_auth_account_page: https://idp-portal.suse.com/univention/self-service/#page=profiledata
+  # proxy_auth_login_page: https://build.opensuse.org/ICSLogin/auth-up
+  # proxy_auth_login_page_enforced: true
+  # proxy_auth_logout_page: "/cmd/ICSLogout"
+
   # ATTENTION: If proxy_auth_mode'is :on, the frontend takes the user
   # name that is coming as headervalue X-username as a
   # valid user does no further authentication. So take care...

@@ -309,7 +309,11 @@ module Webui::WebuiHelper
   end
 
   def log_in_link(css_class: nil)
-    if kerberos_mode?
+    if proxy_mode? && CONFIG['proxy_auth_login_page_enforced'].present?
+      link_to(CONFIG['proxy_auth_login_page'], class: css_class) do
+        link_content('Log In', css_class, 'fa-sign-in-alt')
+      end
+    elsif kerberos_mode?
       link_to(new_session_path, class: css_class) do
         link_content('Log In', css_class, 'fa-sign-in-alt')
       end

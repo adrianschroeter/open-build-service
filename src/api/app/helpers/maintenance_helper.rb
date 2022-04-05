@@ -206,6 +206,7 @@ module MaintenanceHelper
 
   def copy_binaries_to_repository(source_repository, filter_architecture, source_package, target_repo, target_package_name,
                                   multibuild_container, setrelease)
+    # get updateinfo id in case the source package comes from a maintenance project
     u_id = get_updateinfo_id(source_package, target_repo)
     source_package_name = source_package.name
     if multibuild_container.present?
@@ -213,8 +214,10 @@ module MaintenanceHelper
       target_package_name = target_package_name.gsub(/:.*/, '') << ':' << multibuild_container
     end
     source_repository.architectures.each do |arch|
+      # user architecture filter
       next if filter_architecture.present? && arch.name != filter_architecture
-      # get updateinfo id in case the source package comes from a maintenance project
+      # skip automatically because target lacks the architecture
+      next unless target_repo.architectures.include? arch
       copy_single_binary(arch, target_repo, source_package.project.name, source_package_name,
                          source_repository, target_package_name, u_id, setrelease)
     end

@@ -1605,6 +1605,8 @@ sub getprojpack {
 	  $pinfo->{'error'} = 'excluded';
 	  next;
 	}
+        my $flavor;
+        $flavor = $1 if $rev->{'originpackage'} && $rev->{'originpackage'} =~ /:([^:]+)$/;
 	if ($files->{'_aggregate'}) {
 	  my $aggregatelist = BSRevision::revreadxml($rev, '_aggregate', $files->{'_aggregate'}, $BSXML::aggregatelist, 1);
 	  if (!$aggregatelist) {
@@ -1648,8 +1650,10 @@ sub getprojpack {
 	    }
 	    $pinfo->{'info'} = \@dinfo if @dinfo;
 	  }
-	} elsif ($files->{'_patchinfo'}) {
-	  my $patchinfo = BSRevision::revreadxml($rev, '_patchinfo', $files->{'_patchinfo'}, $BSXML::patchinfo, 1);
+	} elsif ($files->{'_patchinfo'} || ($flavor && $files->{"_patchinfo.$flavor"})) {
+	  my $fn = '_patchinfo';
+	  $fn = "_patchinfo.$flavor" if $flavor && $files->{"_patchinfo.$flavor"};
+	  my $patchinfo = BSRevision::revreadxml($rev, $fn, $files->{$fn}, $BSXML::patchinfo, 1);
           if (!$patchinfo) {
 	    $pinfo->{'error'} = "bad patchinfo data";
 	    next;
@@ -6675,6 +6679,11 @@ sub sourceinfo {
     return $r;
   } elsif ($files->{'_patchinfo'}) {
     $r->{'filename'} = '_patchinfo';
+    return $r;
+  } elsif (grep {/^_patchinfo./} keys %$files) {
+    BSSrcServer::Multibuild::updatemultibuild($projid, $packid, $files);
+    my $mb = BSSrcServer::Multibuild::getmultibuild($projid, $rev->{'package'}) || {};
+    $r->{'filename'} = '_patchinfo.'.$mb->{'flavor'};
     return $r;
   }
   my $type = $bconf->{'type'};

@@ -2559,12 +2559,6 @@ sub copybuild {
       my $setrelease = $cgi->{'setrelease'};
       my $oldsetrelease;
       $oldsetrelease = readstr("$odir/.setrelease") if -e "$odir/.setrelease";
-      # directories are stripped of the build/release number by default
-      if (!defined($setrelease)) {
-        $setrelease = '' if -d "$odir/$bin";
-        # need to keep associated files in sync with dir
-        $setrelease = '' if $bin =~ /^(.*)\.(?:report|milestone|cdx\.json|spdx\.json|[^\.]+\.intoto\.json)$/ && -d "$odir/$1";
-      }
       if (defined($oldsetrelease) && $oldsetrelease eq '-') {
         # we use '-' as "released without setrelease" marker
         undef $oldsetrelease;

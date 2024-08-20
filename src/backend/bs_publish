@@ -2525,7 +2525,10 @@ sub publish {
 	  $p = $bin;
 	  if (-d "$r/$1") {
             $p = "repo/$bin";
-	    $p = mapslepool($repotype{'slepool'}->[0], $r, $rbin, $bin) if $repotype{'slepool'};
+	    # directories are most likely repositories, so they need a fixed name for registering
+	    my $basename = 'nobuildid';
+	    $basename = $repotype{'slepool'}->[0] if $repotype{'slepool'};
+	    $p = mapslepool($basename, $r, $rbin, $bin);
 	  }
         } elsif ($bin =~ /\.packages$/) {
           # FIXME2.11: to be removed
@@ -2550,10 +2553,11 @@ sub publish {
 	  $p = mapsleimage($sleimagedata, "$reporoot/$prp/$arch/:repo", $rbin, $p) if $sleimagedata;
 	} elsif (-d "$r/$rbin") {
 	  $p = "repo/$bin";
-	  if ($repotype{'slepool'}) {
-	    $p = mapslepool($repotype{'slepool'}->[0], $r, $rbin, $bin);
-	    $p = $bin if $kiwimedium{"$arch/$p"};	# what???
-	  }
+	  # directories are most likely repositories, so they need a fixed name for registering
+	  my $basename = 'nobuildid';
+	  $basename = $repotype{'slepool'}->[0] if $repotype{'slepool'};
+	  $p = mapslepool($basename, $r, $rbin, $bin);
+	  $p = $bin if $repotype{'slepool'} && $kiwimedium{"$arch/$p"};	# what???
 	  $kiwimedium = "$arch/$bin";
 	} else {
 	  next;

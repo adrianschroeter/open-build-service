@@ -18,6 +18,14 @@ class PublicControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  def test_anonymous_disabled
+    ::Configuration.anonymous = false
+    get '/public/source'
+    assert_response 403
+    get '/public/source/home:Iggy'
+    assert_response 403
+  end
+
   def test_basic_read_tests
     get '/public/source/home:Iggy'
     assert_response :success
